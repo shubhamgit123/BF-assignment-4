@@ -1,0 +1,147 @@
+---
+title: "Assignment 4_bf"
+output: html_document
+date: "2023-10-21"
+---
+
+```{r}
+
+library(fpp)
+library(fpp2)
+library(TTR)
+library(readxl)
+
+
+dataframe <- read_xlsx("C:/Users/Student/Desktop/BF/Sunspots.xlsx")
+
+
+#converting to time series data
+
+Time_series= ts(dataframe$`Monthly Mean Total Sunspot Number`, start = c(2013,01),end= c (2020,12),frequency = 12)
+Time_series
+
+attributes(Time_series)
+plot(Time_series)
+Acf(Time_series)
+
+#1.	Explain your model:
+
+#  Sunspots are temporary phenomena on the Sun's photosphere that appear as spots darker than the surrounding areas. They are regions of reduced surface temperature caused by concentrations of magnetic field flux that inhibit convection. Sunspots usually appear in pairs of opposite magnetic polarity. Their number varies according to the approximately 11-year solar cycle.This dataset set shows the Monthly mean total sunspot number from January 2013 to December 2020. 
+
+# Looking at the time series data it can also be inferred that there has been a visible decreasing trend. Trend is showing as a downward trend gradually over the period of time. The dataset is a 8 years monthly sunspot data and it's showing a bit of seasonality in the ACF around 6 month and 18 month period.
+
+#Take Mean of all available history
+# Average Method 
+
+mean_forecast <- meanf(Time_series,5)
+plot(mean_forecast)
+
+#This method takes the average of the past observations. This forecast can decide the weights and past observations that go into the forecast. It is also known as the Mean Forecast Method. From the mean method, we can determine that with years on the X axis and Monthly Mean Total Sunspot number on the Y axis, we see a certain observation. From the years 2013-14, we see a rise in the sunspot numbers observed and it reaches the highest point in 2014.From 2015, there is a gradual fall in the monthly mean dataset till 2020.The plot shows that this method is working for this dataset and the average sunspot mean is coming around 60. 
+
+# Naive
+naive_forecast <- naive(Time_series,5)
+plot(naive_forecast)
+
+#This is a forecasting method where the most recent data point in a dataset is referred to make predictions for the future data points. Also known as the “no change forecast” method. It assumes that there will be no change or growth in the variable and that historical data is a reliable predictor of the future. The Naive Method is incredibly simple to use and understand. It requires minimal computation and can be applied quickly. The Naive Method assumes that the future will be the same as the most recent observation. Does not look very accurate in the Dataset used in the assignment as the output relies solely on the value of the sunspot measured in 2020. 
+
+# Random Walk
+rwf_forecast <- rwf(Time_series,5)
+rwf_forecast <- rwf(Time_series,5, drift=TRUE)
+plot(rwf_forecast)
+
+
+#Random Walk Method is commonly used for short-term forecasting in situations where the underlying data is relatively stable, and where quick and simple forecasts are sufficient. It shows the results same as the above methods used hence it’s not very accurate for the current dataset.
+
+
+# Seasonal Naive
+snaive_forecast <- snaive(Time_series,5)
+plot(snaive_forecast)
+
+#The Seasonal Naive Method is a variation of the Naive Method in business forecasting that considers seasonality in data. It's particularly useful when dealing with time series data that exhibit regular and predictable seasonal patterns. Like other forecasting methods, the Seasonal Naive Method relies on historical data. This data does not show a lot of seasonal shifts due to which the plot would not show any different result than the previous methods used which leads to an inaccurate output in the current dataset used. 
+
+
+# Moving Averages
+
+MA5_forecast <- ma(Time_series,order=5)
+MA9_forecast <- ma(Time_series,order=9)
+plot(MA5_forecast)
+plot(MA9_forecast)
+
+#This method is used particularly when dealing with time series data. It is designed to smooth out fluctuations and noise in historical data to reveal underlying trends and patterns. The method involves calculating an average of past data points over a specified time, and this average is then used as a forecast for future periods. In the current dataset, this method shows an accurate output as it shows gradual rise in the data till 2014 and then a downward fall from 2015 to 2020. As there is no seasonality in the current dataset, it handles the data well. 
+
+# plot all in a single chart
+
+plot(Time_series)
+lines(naive_forecast$mean,col="red")
+lines(rwf_forecast$mean,col="green")
+lines(snaive_forecast$mean,col="black")
+lines(MA5_forecast,col="Pink")
+lines(MA9_forecast,col="Blue")
+
+# what other attributes are there?
+attributes(naive_forecast)
+
+#  Exponential Smoothing
+ets_forecast <- ets(Time_series)
+plot(ets_forecast)
+attributes(ets_forecast)
+ets_forecast$mse
+
+#It is a commonly used statistical technique in business forecasting, especially for time series data, where the objective is to break down a time series into its component parts to better understand and forecast future values. The method decomposes a time series into three main components: trend, seasonality, and random variation or error. 
+
+#- Trend Component: The trend component represents the long-term movement or direction in the time series data.
+
+#- Seasonal Component: The seasonal component accounts for recurring patterns that occur at fixed intervals within the time series. These patterns are often related to calendar or seasonal factors and can include monthly, quarterly, or annual variations.
+
+#Error Component: It represents the residual variation in the time series data that cannot be explained by the trend or seasonality.
+
+
+# HoltWinters
+HW<- HoltWinters(Time_series)
+plot(HW)
+HW_forecast<-forecast(HW,h=6)
+summary(HW_forecast)
+plot(HW_forecast)
+
+SSE_Simple <- HoltWinters(Time_series,beta=FALSE,gamma=FALSE)
+attributes(SSE_Simple)
+plot(SSE_Simple)
+SSE_Simple$SSE
+head(SSE_Simple$fitted)
+
+#It is a double exponential smoothing method since we must estimate the current level and the slope for the trend. It accounts for three parameters: level, trend and seasonality. For the current dataset, it is effective at capturing and forecasting time series data with trends and seasonality. 
+
+#Level Component(α): The level component represents the estimated baseline or average value of the time series. It accounts for the overall level of the data.
+
+#Trend Component (β): The trend component accounts for the rate of change or trend in the data. It captures whether the data is increasing or decreasing over time.
+
+
+# Accuracy Measures Calculated 
+
+# Pick an accuracy measure, compare your models, and state the best model based on the accuracy comparison
+
+accuracy(mean_forecast)
+accuracy(naive_forecast)
+accuracy(rwf_forecast)
+accuracy(snaive_forecast)
+accuracy(ets_forecast) 
+accuracy(HW_forecast)
+
+# Accuracy Measure Selected for Model Comparison:Mean Absolute Percentage Error (MAPE):
+
+#Accuracy Measure Selected for Model Comparison:
+
+#Root Mean Squared Error (RMSE): RMSE is the square root of the MSE and is often used to express error in the same units as the data. Generally, a lower RMSE indicates a higher level of accuracy in forecasting. 
+
+#The RMSE value for the different forecasts is as follows: 
+#- Mean Forecast Method:41.83276
+#- Naive Forecast Method: 15.23853
+#- Random Walk Forecast Method: 15.21844
+#- Seasonal Naive Forecast Method: 28.79318
+#- ETS Forecast Method: 13.94737
+#- Holt Winters Filtering Method: 17.64008
+
+#RMSE is the lowest for the Exponential Smoothing Forecast which is 13.94737 and it shows the lowest error rate. However, it is important to note that the Exponential Smoothing Forecast can lead to less accurate forecasts when dealing with a longer time frame data as this of Mean Sunspot Data. Therefore, the most suitable model for this time series dataset is the Holt-Winters forecast. 
+```
+```
+
